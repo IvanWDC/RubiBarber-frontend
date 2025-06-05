@@ -35,10 +35,10 @@ export const reservaService = {
     },
 
     // Obtener horarios disponibles de un peluquero
-    getHorariosDisponibles: async (peluqueroId, fecha) => {
+    getHorariosDisponibles: async (peluqueroId, fecha, servicioId) => {
         try {
             const response = await axios.get(
-                `${API_URL}/horarios/peluquero/${peluqueroId}?fecha=${fecha}`
+                `${API_URL}/horarios/peluquero/${peluqueroId}?fecha=${fecha}&servicioId=${servicioId}`
             );
             return response.data;
         } catch (error) {
@@ -85,6 +85,17 @@ export const reservaService = {
         } catch (error) {
             console.error('Error fetching nearby barber shops:', error);
             throw new Error('No se pudieron obtener las peluquerías cercanas.');
+        }
+    },
+
+    // Obtener servicios activos de una peluquería por ID
+    getServiciosActivosByPeluqueria: async (peluqueriaId) => {
+        try {
+            const response = await axios.get(`${API_URL}/peluquerias/${peluqueriaId}/servicios`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching active services for barber shop ${peluqueriaId}:`, error);
+            throw new Error('No se pudieron cargar los servicios de la peluquería.');
         }
     },
 
@@ -185,6 +196,17 @@ export const reservaService = {
             console.error(`Error rejecting appointment ${citaId}:`, error);
             // TODO: Manejar errores específicos del backend
             throw new Error('No se pudo rechazar la cita.');
+        }
+    },
+
+    // Obtener horario semanal de un peluquero (NUEVO)
+    getHorariosSemanalesByPeluqueroId: async (peluqueroId) => {
+        try {
+            const response = await axios.get(`${API_URL}/horarios/semanal/peluquero/${peluqueroId}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching weekly schedule for barber ${peluqueroId}:`, error);
+            throw new Error('No se pudo cargar el horario semanal del peluquero.');
         }
     }
 }; 

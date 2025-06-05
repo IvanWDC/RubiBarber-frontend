@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Divider, List, ListItem, ListItemIcon, ListItemText, TextField, InputAdornment, IconButton, Paper, Grid, Modal, Stack, Button, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, Divider, List, ListItem, ListItemIcon, ListItemText, TextField, InputAdornment, IconButton, Paper, Grid, Modal, Stack, Button, CircularProgress, Alert, Chip, Avatar } from '@mui/material';
 import { motion } from 'framer-motion'; // Importar motion
 import {
     Dashboard as DashboardIcon,
@@ -9,16 +9,24 @@ import {
     EventNote as EventNoteIcon,
     Receipt as ReceiptIcon,
     Star as StarIcon,
-    Search as SearchIcon,
     AccountCircle as AccountCircleIcon,
-    Notifications as NotificationsIcon,
-    Spa as SpaIcon
+    Spa as SpaIcon,
+    Store as StoreIcon,
+    Close as CloseIcon,
+    PhotoCamera as PhotoCameraIcon,
+    Delete as DeleteIcon,
+    Person as PersonIcon,
+    Email as EmailIcon,
+    Lock as LockIcon,
+    Logout as LogoutIcon
 } from '@mui/icons-material';
-import { Link, useLocation } from 'react-router-dom'; // Asumiendo que usas react-router-dom para navegación
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // Asumiendo que usas react-router-dom para navegación
 import { Bar } from 'react-chartjs-2'; // Importar componente de gráfica de barras
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js'; // Importar elementos necesarios de Chart.js
 import dayjs from 'dayjs';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/AdminDashboard.css';
+import API from '../../api/client';
 
 // Registrar los elementos de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -56,22 +64,49 @@ const dummyMonthlyAppointments = [
 
 const AdminDashboard = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { userData, setUserData, updateUserData } = useAuth();
     const [widgetData, setWidgetData] = useState(dummyWidgetData);
     const [latestReservations, setLatestReservations] = useState(dummyLatestReservations);
     const [monthlyAppointments, setMonthlyAppointments] = useState(dummyMonthlyAppointments);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [openProfileModal, setOpenProfileModal] = useState(false);
+    const [peluqueria, setPeluqueria] = useState(null);
+    const [peluqueriaError, setPeluqueriaError] = useState(null);
+
+    // Añadir estado para notificaciones
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
 
     // Nuevos estados para los datos del perfil del administrador
     const [adminProfile, setAdminProfile] = useState({
         nombreCompleto: '',
         correoElectronico: '',
-        imagenPerfilUrl: null, // URL de la imagen actual
-        nuevaImagenPerfil: null, // Archivo de la nueva imagen a subir
+        password: '', // Nueva contraseña (opcional)
+        imagenPerfilUrl: null,
+        nuevaImagenPerfil: null,
     });
+    
+    // Estado para forzar la actualización del Avatar
+    const [avatarKey, setAvatarKey] = useState(0);
+
     const [loadingProfile, setLoadingProfile] = useState(false);
     const [profileError, setProfileError] = useState(null);
+
+    // Estados para validación
+    const [validationErrors, setValidationErrors] = useState({
+        nombreCompleto: '',
+        correoElectronico: '',
+        password: '',
+        imagenPerfil: ''
+    });
+
+    // Estado para el preview de la imagen
+    const [imagePreview, setImagePreview] = useState(null);
 
     // Configuración para la gráfica de barras
     const chartData = {
@@ -115,6 +150,9 @@ const AdminDashboard = () => {
         },
     };
 
+    // Constante para la URL base del backend
+    const BASE_BACKEND_URL = 'http://localhost:8080';
+
     const fetchData = async () => {
         setLoading(true);
         setError(null);
@@ -155,24 +193,43 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+        if (userData?.peluqueria) {
+            setPeluqueria(userData.peluqueria);
+        }
+    }, [userData]);
 
     // Funciones para abrir y cerrar el modal de perfil
     const handleOpenProfileModal = () => {
-        // TODO: Cargar datos del perfil del administrador al abrir el modal
+        // Inicializar el estado del perfil con valores por defecto seguros
+        setAdminProfile({
+            nombreCompleto: userData?.nombre || '',
+            correoElectronico: userData?.email || '',
+            password: '',
+            imagenPerfilUrl: userData?.imagenPerfilUrl || null,
+            nuevaImagenPerfil: null,
+        });
         fetchAdminProfile();
         setOpenProfileModal(true);
     };
     const handleCloseProfileModal = () => {
         setOpenProfileModal(false);
-        // Resetear estados del modal al cerrar si es necesario
-        setProfileError(null);
-        setAdminProfile({ // Opcional: resetear a los datos cargados si no se guardaron
+        setValidationErrors({
             nombreCompleto: '',
             correoElectronico: '',
-            imagenPerfilUrl: null,
-            nuevaImagenPerfil: null,
+            password: '',
+            imagenPerfil: ''
         });
+        setImagePreview(null);
+        // Resetear el estado del perfil a los datos actuales
+        if (userData) {
+            setAdminProfile({
+                nombreCompleto: userData.nombre || '',
+                correoElectronico: userData.email || '',
+                password: '',
+                imagenPerfilUrl: userData.imagenPerfilUrl || null,
+                nuevaImagenPerfil: null
+            });
+        }
     };
 
     // TODO: Implementar carga de datos del perfil del administrador
@@ -180,75 +237,260 @@ const AdminDashboard = () => {
         setLoadingProfile(true);
         setProfileError(null);
         try {
-            // Aquí iría la llamada a la API para obtener los datos del perfil
-            // const response = await api.getAdminProfile();
-            // setAdminProfile(response.data);
+            const token = localStorage.getItem("token");
+            if (!token) {
+                throw new Error("No hay token de autenticación");
+            }
 
-            // Datos dummy por ahora
-            await new Promise(resolve => setTimeout(resolve, 500));
-            setAdminProfile({
-                nombreCompleto: 'Administrador Ejemplo',
-                correoElectronico: 'admin.ejemplo@rubibarber.com',
-                imagenPerfilUrl: '/path/to/dummy/image.jpg', // O null si no hay imagen
-                nuevaImagenPerfil: null,
+            const response = await fetch(`${BASE_BACKEND_URL}/api/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
-        } catch (err) {
-            console.error('Error fetching admin profile:', err);
-            setProfileError('Error al cargar el perfil.');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // Token inválido o expirado
+                    localStorage.removeItem("token");
+                    window.location.href = "/login";
+                    return;
+                }
+                throw new Error('Error al cargar el perfil');
+            }
+
+            const profileData = await response.json();
+            console.log('Datos del perfil obtenidos:', profileData);
+            setAdminProfile({
+                idUsuario: profileData.id,
+                nombreCompleto: profileData.nombre || '',
+                correoElectronico: profileData.email || '',
+                password: '',
+                imagenPerfilUrl: profileData.imagenPerfilUrl || null,
+                nuevaImagenPerfil: null
+            });
+
+            console.log('adminProfile state after fetch:', adminProfile);
+
+            // Actualizar el contexto global asegurando que tenga idUsuario
+            updateUserData({ ...profileData, idUsuario: profileData.id });
+
+            // Solo mostrar error si no se pudo obtener el email (dato crítico)
+            if (!profileData.email) {
+                setProfileError('No se pudo cargar la información del perfil.');
+            }
+
+            // Devuelve los datos cargados
+            return profileData;
+        } catch (error) {
+            console.error('Error al cargar el perfil del admin:', error);
+            // Solo mostrar error si no tenemos datos del perfil
+            if (!adminProfile?.correoElectronico) {
+                setProfileError('No se pudo cargar la información del perfil.');
+            }
         } finally {
             setLoadingProfile(false);
         }
     };
 
-    // Manejar cambios en los campos de texto
+    // Función para validar el formulario
+    const validateForm = () => {
+        const errors = {};
+        let isValid = true;
+
+        // Validar nombre
+        if (!adminProfile.nombreCompleto.trim()) {
+            errors.nombreCompleto = 'El nombre es obligatorio';
+            isValid = false;
+        }
+
+        // Validar email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(adminProfile.correoElectronico)) {
+            errors.correoElectronico = 'Email inválido';
+            isValid = false;
+        }
+
+        // Validar contraseña (solo si se ha modificado)
+        if (adminProfile.password && adminProfile.password.length < 6) {
+            errors.password = 'La contraseña debe tener al menos 6 caracteres';
+            isValid = false;
+        }
+
+        // Validar imagen (si se ha seleccionado una nueva)
+        if (adminProfile.nuevaImagenPerfil) {
+            const file = adminProfile.nuevaImagenPerfil;
+            const validTypes = ['image/jpeg', 'image/png'];
+            const maxSize = 2 * 1024 * 1024; // 2MB
+
+            if (!validTypes.includes(file.type)) {
+                errors.imagenPerfil = 'Solo se permiten imágenes PNG o JPG';
+                isValid = false;
+            }
+            if (file.size > maxSize) {
+                errors.imagenPerfil = 'La imagen no debe superar 2MB';
+                isValid = false;
+            }
+        }
+
+        setValidationErrors(errors);
+        return isValid;
+    };
+
+    // Función para manejar cambios en los campos
     const handleProfileInputChange = (e) => {
         const { name, value } = e.target;
         setAdminProfile(prevState => ({
             ...prevState,
             [name]: value,
         }));
-    };
-
-    // Manejar selección de archivo de imagen
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // TODO: Validar tamaño y formato del archivo si es necesario
-            setAdminProfile(prevState => ({
-                ...prevState,
-                nuevaImagenPerfil: file,
-                // Opcional: mostrar preview de la imagen seleccionada
-                // imagenPerfilUrl: URL.createObjectURL(file),
+        // Limpiar error de validación al modificar
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({
+                ...prev,
+                [name]: ''
             }));
         }
     };
 
-    // TODO: Implementar guardado de cambios del perfil
+    // Función para manejar la subida de imagen
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validar tipo y tamaño
+            const validTypes = ['image/jpeg', 'image/png'];
+            const maxSize = 2 * 1024 * 1024; // 2MB
+
+            if (!validTypes.includes(file.type)) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    imagenPerfil: 'Solo se permiten imágenes PNG o JPG'
+                }));
+                return;
+            }
+            if (file.size > maxSize) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    imagenPerfil: 'La imagen no debe superar 2MB'
+                }));
+                return;
+            }
+
+            // Crear preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+
+            // Actualizar estado
+            setAdminProfile(prevState => ({
+                ...prevState,
+                nuevaImagenPerfil: file
+            }));
+            setValidationErrors(prev => ({
+                ...prev,
+                imagenPerfil: ''
+            }));
+        }
+    };
+
+    // Función para eliminar la imagen
+    const handleRemoveImage = () => {
+        setAdminProfile(prevState => ({
+            ...prevState,
+            nuevaImagenPerfil: null,
+            imagenPerfilUrl: null
+        }));
+        setImagePreview(null);
+    };
+
+    // Función para guardar cambios
     const handleSaveChanges = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
         setLoadingProfile(true);
         setProfileError(null);
         try {
-            // Aquí iría la llamada a la API para actualizar el perfil
-            // const formData = new FormData();
-            // formData.append('nombreCompleto', adminProfile.nombreCompleto);
-            // formData.append('correoElectronico', adminProfile.correoElectronico);
-            // if (adminProfile.nuevaImagenPerfil) {
-            //     formData.append('imagenPerfil', adminProfile.nuevaImagenPerfil);
-            // }
-            // await api.updateAdminProfile(formData);
+            // Guardar el correo anterior antes de la actualización
+            const correoAnterior = userData.email;
 
-            // Simular guardado
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const formData = new FormData();
+            formData.append('nombre', adminProfile.nombreCompleto);
+            formData.append('email', adminProfile.correoElectronico);
+            if (adminProfile.password) {
+                formData.append('password', adminProfile.password);
+            }
+            if (adminProfile.nuevaImagenPerfil) {
+                formData.append('imagen', adminProfile.nuevaImagenPerfil);
+            }
+            
+            // Add flag to remove image if imagenPerfilUrl is null and no new image is selected
+            if (adminProfile.imagenPerfilUrl === null && !adminProfile.nuevaImagenPerfil) {
+                 formData.append('eliminarImagen', 'true');
+            }
 
-            console.log('Perfil guardado:', adminProfile);
-            // TODO: Mostrar mensaje de éxito
-            handleCloseProfileModal(); // Cerrar modal tras guardar
+            const response = await fetch(`${BASE_BACKEND_URL}/api/usuarios/${adminProfile.idUsuario}`, {
+                method: 'PUT',
+                body: formData,
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                }
+            });
 
+            if (!response.ok) {
+                throw new Error('Error al actualizar el perfil');
+            }
+
+            const data = await response.json();
+
+            console.log('Respuesta del backend al guardar perfil:', data);
+
+            // Verificar si el email ha cambiado
+            const emailHaCambiado = correoAnterior !== adminProfile.correoElectronico;
+            
+            if (emailHaCambiado) {
+                // Si el email cambió, el backend devolverá un nuevo token
+                if (data.token) {
+                    // Actualizar el token y mostrar mensaje de éxito
+                    localStorage.setItem("token", data.token);
+                    setSnackbar({
+                        open: true,
+                        message: "Tu correo electrónico ha sido actualizado. La sesión ha sido renovada automáticamente.",
+                        severity: 'success'
+                    });
+                } else {
+                    // Si por alguna razón no recibimos el token, forzar logout
+                    localStorage.removeItem("token");
+                    setSnackbar({
+                        open: true,
+                        message: "Tu correo electrónico ha sido actualizado. Por seguridad, debes volver a iniciar sesión.",
+                        severity: 'warning' // Usar warning o error si es necesario re-loggear
+                    });
+                    window.location.href = "/login"; // Redirigir después de mostrar el Snackbar
+                    return; // Salir de la función
+                }
+            } else {
+                // Si no cambió el email, solo mostrar mensaje de éxito
+                setSnackbar({
+                    open: true,
+                    message: "Perfil actualizado correctamente",
+                    severity: 'success'
+                });
+            }
+
+            // Actualizar el contexto y cerrar el modal
+            updateUserData({ ...userData, ...data });
+
+            handleCloseProfileModal();
+            
+            // Increment key to force Avatar re-render
+            setAvatarKey(prevKey => prevKey + 1);
+            
         } catch (err) {
             console.error('Error saving admin profile:', err);
-            setProfileError('Error al guardar los cambios.');
-            // TODO: Mostrar mensaje de error
+            setProfileError('Error al guardar los cambios. Por favor, intente nuevamente.');
         } finally {
             setLoadingProfile(false);
         }
@@ -268,63 +510,136 @@ const AdminDashboard = () => {
         return dayjs(fechaHora).format('DD/MM/YYYY HH:mm');
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
+
     return (
         <Box className="admin-dashboard-container">
             {/* Sidebar */}
             <motion.Box 
                 className="admin-dashboard-sidebar"
-                initial={{ x: -250 }} // Inicia fuera de la pantalla
-                animate={{ x: 0 }} // Se desliza hacia adentro
+                initial={{ x: -250 }}
+                animate={{ x: 0 }}
                 transition={{ duration: 0.5 }}
+                sx={{ position: 'relative', height: '100%' }}
             >
-                <Box className="sidebar-logo-container">
-                    <img src="/logo.png" alt="Logo" className="sidebar-logo" />
+                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <Box>
+                        <Box className="sidebar-logo-container">
+                            <img src="/logo.png" alt="Logo" className="sidebar-logo" />
+                        </Box>
+                        <Divider sx={{ mb: 2, bgcolor: 'rgba(255, 255, 255, 0.2)' }} />
+                        <List>
+                            {sidebarItems.map((item) => (
+                                <ListItem
+                                    button
+                                    key={item.text}
+                                    component={Link}
+                                    to={item.path}
+                                    sx={{
+                                        '&.active': { /* Estilo para el item activo */ }
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ color: '#fff' }}>{item.icon}</ListItemIcon>
+                                    <ListItemText primary={item.text} sx={{ color: '#fff' }} />
+                                </ListItem>
+                            ))}
+                        </List>
+                    </Box>
+                    <Button
+                        onClick={handleLogout}
+                        sx={{
+                            mt: 'auto',
+                            mb: 2,
+                            mx: 2,
+                            backgroundColor: '#d72a3c',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#b71c1c',
+                            },
+                            borderRadius: '8px',
+                            textTransform: 'none',
+                            py: 1
+                        }}
+                        startIcon={<LogoutIcon />}
+                    >
+                        Cerrar sesión
+                    </Button>
                 </Box>
-                <Divider sx={{ mb: 2, bgcolor: 'rgba(255, 255, 255, 0.2)' }} />
-                <List>
-                    {sidebarItems.map((item) => (
-                        <ListItem
-                            button
-                            key={item.text}
-                            component={Link}
-                            to={item.path}
-                            sx={{
-                                '&.active': { /* Estilo para el item activo */ }
-                            }}
-                        >
-                            <ListItemIcon sx={{ color: '#fff' }}>{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.text} sx={{ color: '#fff' }} />
-                        </ListItem>
-                    ))}
-                </List>
             </motion.Box>
 
             {/* Main Content Area */}
             <Box className="admin-dashboard-main-content">
                 {/* Topbar */}
                 <Box className="admin-dashboard-topbar">
-                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Panel de Administración</Typography>
-                    {/* Buscador, Icono/Avatar, Notificaciones */}
+                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Dashboard</Typography>
                     <Box className="topbar-right">
-                        <TextField
-                            variant="outlined"
-                            size="small"
-                            placeholder="Buscar..."
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon />
-                                    </InputAdornment>
-                                ),
-                                style: { borderRadius: '20px', backgroundColor: '#f0f0f0' }
+                        {/* Nombre de la Peluquería */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            mr: 2,
+                            minWidth: '200px',
+                            justifyContent: 'flex-end'
+                        }}>
+                            {peluqueriaError ? (
+                                <Typography 
+                                    variant="body2" 
+                                    color="error" 
+                                    sx={{ 
+                                        fontSize: '0.875rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.5
+                                    }}
+                                >
+                                    <StoreIcon fontSize="small" />
+                                    {peluqueriaError}
+                                </Typography>
+                            ) : peluqueria ? (
+                                <Chip
+                                    icon={<StoreIcon />}
+                                    label={peluqueria.nombre}
+                                    sx={{
+                                        backgroundColor: 'rgba(215, 42, 60, 0.3)',
+                                        color: '#d72a3c',
+                                        '& .MuiChip-icon': {
+                                            color: '#d72a3c'
+                                        },
+                                        fontWeight: 'medium',
+                                        fontSize: '0.9rem'
+                                    }}
+                                />
+                            ) : (
+                                <CircularProgress size={20} sx={{ color: '#d72a3c' }} />
+                            )}
+                        </Box>
+                        {console.log('userData.imagenPerfilUrl en Topbar:', userData?.imagenPerfilUrl)}
+                        <IconButton 
+                            color="inherit" 
+                            onClick={handleOpenProfileModal}
+                            sx={{ 
+                                p: 0.5,
+                                '&:hover': { 
+                                    bgcolor: 'rgba(255, 255, 255, 0.1)'
+                                }
                             }}
-                            sx={{ mr: 2, '& fieldset': { border: 'none' } }} // Eliminar borde y añadir margen
-                        />
-                        <IconButton color="inherit">
-                            <NotificationsIcon />
-                        </IconButton>
-                        <IconButton color="inherit" onClick={handleOpenProfileModal}>
-                            <AccountCircleIcon />
+                        >
+                            <Avatar
+                                // Construct URL only if imagenPerfilUrl exists
+                                src={userData?.imagenPerfilUrl ? `${BASE_BACKEND_URL}${userData.imagenPerfilUrl}?t=${Date.now()}` : undefined}
+                                sx={{ 
+                                    width: 32, 
+                                    height: 32,
+                                    bgcolor: '#d72a3c',
+                                    fontSize: '1rem'
+                                }}
+                                key={avatarKey}
+                            >
+                                {userData?.nombre?.charAt(0)?.toUpperCase() || 'A'}
+                            </Avatar>
                         </IconButton>
                     </Box>
                 </Box>
@@ -335,19 +650,19 @@ const AdminDashboard = () => {
                 <Box className="admin-dashboard-content-area">
                     {/* Widgets Resumen */}
                     <Grid container spacing={3} className="admin-dashboard-summary-widgets">
-                        <Grid item xs={12} sm={4}>
+                        <Grid item sx={{ gridColumn: { xs: 'span 12', sm: 'span 4' } }}>
                             <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
                                 <Typography variant="h6" color="textSecondary">Citas Hoy</Typography>
                                 <Typography variant="h4" color="primary" sx={{ mt: 1 }}>{widgetData.citasHoy}</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item sx={{ gridColumn: { xs: 'span 12', sm: 'span 4' } }}>
                             <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
                                 <Typography variant="h6" color="textSecondary">Ingresos Semanales</Typography>
                                 <Typography variant="h4" color="success.main" sx={{ mt: 1 }}>${widgetData.ingresosSemanales.toFixed(2)}</Typography>
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item sx={{ gridColumn: { xs: 'span 12', sm: 'span 4' } }}>
                             <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
                                 <Typography variant="h6" color="textSecondary">Peluqueros Activos</Typography>
                                 <Typography variant="h4" color="primary" sx={{ mt: 1 }}>{widgetData.peluquerosActivos}</Typography>
@@ -370,10 +685,22 @@ const AdminDashboard = () => {
                             <Box>
                                 {/* Ejemplo básico de cómo podría ser la tabla con Box y Typography */}
                                 {latestReservations.map(reservation => (
-                                    <Box key={reservation.id} sx={{ borderBottom: '1px solid #eee', py: 1 }}>
-                                        <Typography variant="body1"><b>Cliente:</b> {reservation.cliente}</Typography>
-                                        <Typography variant="body2" color="textSecondary"><b>Fecha:</b> {formatFechaHora(reservation.fechaHora)}</Typography>
-                                        <Typography variant="body2" color="textSecondary"><b>Servicio:</b> {reservation.servicio}</Typography>
+                                    <Box key={reservation.id} sx={{ 
+                                        borderBottom: '1px solid #eee', 
+                                        py: 1,
+                                        '& .MuiTypography-root': {
+                                            color: 'text.primary' // Asegura que el texto sea visible
+                                        }
+                                    }}>
+                                        <Typography variant="body1" sx={{ color: 'text.primary' }}>
+                                            <Box component="span" sx={{ fontWeight: 'bold', color: 'text.primary' }}>Cliente:</Box> {reservation.cliente}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                            <Box component="span" sx={{ fontWeight: 'bold', color: 'text.primary' }}>Fecha:</Box> {formatFechaHora(reservation.fechaHora)}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                            <Box component="span" sx={{ fontWeight: 'bold', color: 'text.primary' }}>Servicio:</Box> {reservation.servicio}
+                                        </Typography>
                                     </Box>
                                 ))}
                             </Box>
@@ -389,87 +716,237 @@ const AdminDashboard = () => {
                 aria-labelledby="profile-modal-title"
                 aria-describedby="profile-modal-description"
             >
-                <Box sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: { xs: '90%', sm: 400, md: 500 }, // Ancho responsive
-                    bgcolor: 'background.paper',
-                    boxShadow: 24,
-                    p: 4,
-                    borderRadius: 2,
-                    outline: 'none', // Eliminar borde de foco
-                    maxHeight: '90vh', // Altura máxima para evitar desbordamiento
-                    overflowY: 'auto', // Scroll si el contenido es largo
-                }}>
-                    <Typography id="profile-modal-title" variant="h6" component="h2" gutterBottom>
-                        Perfil del Administrador
-                    </Typography>
-                    {loadingProfile ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                            <CircularProgress size={24} />
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <Box sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: { xs: '90%', sm: 400, md: 500 },
+                        bgcolor: 'background.paper',
+                        boxShadow: 24,
+                        p: 4,
+                        borderRadius: 2,
+                        outline: 'none',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                    }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                            <Typography id="profile-modal-title" variant="h6" component="h2" sx={{ color: 'text.primary' }}>
+                                Editar Perfil
+                            </Typography>
+                            <IconButton 
+                                onClick={handleCloseProfileModal}
+                                size="small"
+                                sx={{ 
+                                    color: 'text.secondary',
+                                    '&:hover': { color: 'error.main' }
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
                         </Box>
-                    ) : profileError ? (
-                        <Alert severity="error">{profileError}</Alert>
-                    ) : (
-                        <Stack spacing={2}>
-                            <TextField
-                                label="Nombre Completo"
-                                variant="outlined"
-                                fullWidth
-                                size="small"
-                                name="nombreCompleto"
-                                value={adminProfile.nombreCompleto}
-                                onChange={handleProfileInputChange}
-                            />
-                            <TextField
-                                label="Correo Electrónico"
-                                variant="outlined"
-                                fullWidth
-                                size="small"
-                                type="email"
-                                name="correoElectronico"
-                                value={adminProfile.correoElectronico}
-                                onChange={handleProfileInputChange}
-                            />
-                            {/* Sección para la imagen de perfil */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                                <Box sx={{
-                                    width: 80, height: 80, bgcolor: '#ccc', borderRadius: '50%', mr: 2,
-                                    display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden'
-                                }}>
-                                    {adminProfile.imagenPerfilUrl ? (
-                                        <img src={adminProfile.imagenPerfilUrl} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                         <AccountCircleIcon sx={{ fontSize: 60, color: '#fff' }} />
-                                    )}
-                                </Box>
-                                <Button variant="outlined" component="label">
-                                    Subir Imagen
-                                    <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-                                </Button>
-                                 {adminProfile.nuevaImagenPerfil && (
-                                    <Typography variant="body2" sx={{ ml: 1, fontStyle: 'italic' }}>
-                                        Archivo seleccionado: {adminProfile.nuevaImagenPerfil.name}
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Stack>
-                    )}
 
-                     <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', spacing: 2 }}>
-                         <Button onClick={handleCloseProfileModal} sx={{ mr: 1 }}>Cancelar</Button>
-                         <Button
-                            variant="contained"
-                            sx={{ bgcolor: '#d72a3c', '&:hover': { bgcolor: '#b0212e' } }}
-                            onClick={handleSaveChanges}
-                            disabled={loadingProfile} // Deshabilitar botón al guardar
-                         >
-                            {loadingProfile ? <CircularProgress size={24} color="inherit" /> : 'Guardar Cambios'}
-                        </Button>
+                        {loadingProfile ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                                <CircularProgress size={40} sx={{ color: '#d72a3c' }} />
+                            </Box>
+                        ) : profileError ? (
+                            <Alert 
+                                severity="error" 
+                                sx={{ mb: 2 }}
+                                action={
+                                    <IconButton
+                                        aria-label="close"
+                                        color="inherit"
+                                        size="small"
+                                        onClick={() => setProfileError(null)}
+                                    >
+                                        <CloseIcon fontSize="inherit" />
+                                    </IconButton>
+                                }
+                            >
+                                {profileError}
+                            </Alert>
+                        ) : (
+                            <form onSubmit={(e) => { e.preventDefault(); handleSaveChanges(); }}>
+                                <Stack spacing={3}>
+                                    {/* Sección de imagen de perfil */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        alignItems: 'center',
+                                        mb: 2 
+                                    }}>
+                                        <Box sx={{
+                                            position: 'relative',
+                                            width: 120,
+                                            height: 120,
+                                            mb: 2
+                                        }}>
+                                            <Avatar
+                                                src={imagePreview || (adminProfile.imagenPerfilUrl ? `${BASE_BACKEND_URL}${adminProfile.imagenPerfilUrl}` : undefined)}
+                                                sx={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    bgcolor: '#d72a3c',
+                                                    fontSize: '3rem'
+                                                }}
+                                                key={avatarKey}
+                                            >
+                                                {adminProfile.nombreCompleto?.charAt(0)?.toUpperCase() || 'A'}
+                                            </Avatar>
+                                            <IconButton
+                                                size="small"
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    right: 0,
+                                                    bgcolor: 'background.paper',
+                                                    boxShadow: 1,
+                                                    '&:hover': { bgcolor: 'grey.100' }
+                                                }}
+                                                component="label"
+                                            >
+                                                <input
+                                                    type="file"
+                                                    hidden
+                                                    accept="image/jpeg,image/png"
+                                                    onChange={handleImageUpload}
+                                                />
+                                                <PhotoCameraIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                        {(imagePreview || adminProfile.imagenPerfilUrl) && (
+                                            <Button
+                                                size="small"
+                                                color="error"
+                                                startIcon={<DeleteIcon />}
+                                                onClick={handleRemoveImage}
+                                                sx={{ mt: 1 }}
+                                            >
+                                                Eliminar imagen
+                                            </Button>
+                                        )}
+                                        {validationErrors.imagenPerfil && (
+                                            <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                                                {validationErrors.imagenPerfil}
+                                            </Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* Campos del formulario */}
+                                    <TextField
+                                        label="Nombre Completo"
+                                        variant="outlined"
+                                        fullWidth
+                                        size="small"
+                                        name="nombreCompleto"
+                                        value={adminProfile.nombreCompleto || ''}
+                                        onChange={handleProfileInputChange}
+                                        error={!!validationErrors.nombreCompleto}
+                                        helperText={validationErrors.nombreCompleto}
+                                        required
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <PersonIcon color="action" />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+
+                                    <TextField
+                                        label="Correo Electrónico"
+                                        variant="outlined"
+                                        fullWidth
+                                        size="small"
+                                        type="email"
+                                        name="correoElectronico"
+                                        value={adminProfile.correoElectronico || ''}
+                                        onChange={handleProfileInputChange}
+                                        error={!!validationErrors.correoElectronico}
+                                        helperText={
+                                            validationErrors.correoElectronico || 
+                                            "⚠️ Si modificas tu correo electrónico, deberás volver a iniciar sesión"
+                                        }
+                                        required
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <EmailIcon color="action" />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+
+                                    <TextField
+                                        label="Nueva Contraseña (opcional)"
+                                        variant="outlined"
+                                        fullWidth
+                                        size="small"
+                                        type="password"
+                                        name="password"
+                                        value={adminProfile.password || ''}
+                                        onChange={handleProfileInputChange}
+                                        error={!!validationErrors.password}
+                                        helperText={validationErrors.password || 'Dejar en blanco para mantener la contraseña actual'}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <LockIcon color="action" />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+                                </Stack>
+
+                                <Box sx={{ 
+                                    mt: 4, 
+                                    display: 'flex', 
+                                    justifyContent: 'flex-end', 
+                                    gap: 2 
+                                }}>
+                                    <Button 
+                                        onClick={handleCloseProfileModal}
+                                        variant="outlined"
+                                        sx={{ 
+                                            borderColor: 'grey.400',
+                                            color: 'text.secondary',
+                                            '&:hover': {
+                                                borderColor: 'grey.600',
+                                                bgcolor: 'grey.50'
+                                            }
+                                        }}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        disabled={loadingProfile}
+                                        sx={{ 
+                                            bgcolor: '#d72a3c',
+                                            '&:hover': { bgcolor: '#b0212e' },
+                                            minWidth: 120
+                                        }}
+                                    >
+                                        {loadingProfile ? (
+                                            <CircularProgress size={24} color="inherit" />
+                                        ) : (
+                                            'Guardar Cambios'
+                                        )}
+                                    </Button>
+                                </Box>
+                            </form>
+                        )}
                     </Box>
-                </Box>
+                </motion.div>
             </Modal>
         </Box>
     );

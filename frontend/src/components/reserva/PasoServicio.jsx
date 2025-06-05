@@ -25,18 +25,50 @@ const PasoServicio = () => {
         peluqueriaSeleccionada
     } = useReserva();
     
-    // Obtener servicios de la peluquería seleccionada del contexto
-    const servicios = peluqueriaSeleccionada?.servicios?.filter(s => s.activo) || [];
-    // No necesitamos loading/error state en este componente si la peluquería ya fue cargada en el componente padre (ReservaCita)
-    const loading = false; // Simpre false si los datos vienen del contexto
-    const error = null; // Siempre null si los datos vienen del contexto
+    // **Nuevo estado para los servicios y manejo de carga/error**
+    const [serviciosPeluqueria, setServiciosPeluqueria] = useState([]);
+    const [loadingServicios, setLoadingServicios] = useState(true);
+    const [errorServicios, setErrorServicios] = useState(null);
+
+    // **Effect para cargar los servicios activos de la peluquería seleccionada**
+    useEffect(() => {
+        const cargarServicios = async () => {
+            if (peluqueriaSeleccionada?.id) {
+                try {
+                    setLoadingServicios(true);
+                    setErrorServicios(null);
+                    const serviciosData = await reservaService.getServiciosActivosByPeluqueria(peluqueriaSeleccionada.id);
+                    setServiciosPeluqueria(serviciosData);
+                    setLoadingServicios(false);
+                } catch (error) {
+                    console.error('Error al cargar servicios de la peluquería:', error);
+                    setErrorServicios('No se pudieron cargar los servicios de la peluquería.');
+                    setLoadingServicios(false);
+                }
+            } else {
+                // Si no hay peluquería seleccionada (aunque no debería pasar si vienes de la página del mapa)
+                setServiciosPeluqueria([]);
+                setLoadingServicios(false);
+            }
+        };
+
+        cargarServicios();
+    }, [peluqueriaSeleccionada?.id]); // Dependencia: Recargar si cambia la peluquería
 
     const handleSeleccionServicio = (servicio) => {
-        setServicioSeleccionado(servicio);
-        setTimeout(siguientePaso, 500); // Pequeño delay para la animación
+        if (servicioSeleccionado?.id === servicio.id) {
+            // Si el servicio clickeado ya está seleccionado, lo deseleccionamos
+            setServicioSeleccionado(null);
+        } else {
+            // Si no está seleccionado, seleccionamos este servicio
+            setServicioSeleccionado(servicio);
+        }
+        //setTimeout(siguientePaso, 500); // Pequeño delay para la animación - Quizás quitar para ir directo
+        // No avanzamos automáticamente, la restricción está en el botón Siguiente del componente padre
     };
 
-    if (loading) {
+    // **Manejo de estados de carga y error al mostrar la UI**
+    if (loadingServicios) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                 <CircularProgress />
@@ -44,10 +76,19 @@ const PasoServicio = () => {
         );
     }
 
-    if (error) {
+    if (errorServicios) {
         return (
             <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
+                {errorServicios}
+            </Alert>
+        );
+    }
+
+    // Si no hay servicios disponibles después de cargar
+    if (serviciosPeluqueria.length === 0) {
+        return (
+            <Alert severity="info" sx={{ mb: 2 }}>
+                No hay servicios activos disponibles para esta peluquería en este momento.
             </Alert>
         );
     }
@@ -62,20 +103,16 @@ const PasoServicio = () => {
                 Selecciona el Servicio
             </Typography>
             
-            {peluqueriaSeleccionada && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                    Seleccionando servicio para {peluqueriaSeleccionada.nombre}
-                </Alert>
-            )}
-
+            {/* **Renderizar los servicios desde el estado local** */}
             <Grid container spacing={3}>
-                {servicios.map((servicio) => (
+                {serviciosPeluqueria.map((servicio) => (
                     <Grid item xs={12} sm={6} md={4} key={servicio.id}>
                         <motion.div
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                         >
                             <Card 
+                                className="reserva-servicio-card"
                                 sx={{ 
                                     height: '100%',
                                     display: 'flex',
@@ -111,7 +148,9 @@ const PasoServicio = () => {
                                         }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <AccessTimeIcon fontSize="small" color="action" />
-                                                <Typography variant="body2">
+                                                <Typography variant="body2"
+                                                    sx={{ color: '#333' }}
+                                                >
                                                     {servicio.duracion} min
                                                 </Typography>
                                             </Box>

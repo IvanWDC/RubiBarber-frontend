@@ -328,14 +328,6 @@ const DetalleCitaPeluquero = () => {
                                                         {cita.cliente?.nombre || 'Desconocido'}
                                                     </Typography>
                                                 </Box>
-                                                {cita.cliente?.telefono && (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                                        <PhoneIcon sx={{ color: '#d72a3c', fontSize: '1.5rem' }} />
-                                                        <Typography variant="body2">
-                                                            {cita.cliente.telefono}
-                                                        </Typography>
-                                                    </Box>
-                                                )}
                                                 {cita.cliente?.email && (
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                         <EmailIcon sx={{ color: '#d72a3c', fontSize: '1.5rem' }} />

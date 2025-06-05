@@ -10,6 +10,7 @@ import {
 import { loginUser } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { jwtDecode } from 'jwt-decode'
 import '../styles/LoginPage.css'
 
 const LoginPage = () => {
@@ -28,16 +29,48 @@ const LoginPage = () => {
 
     try {
       const data = await loginUser(email, password)
-      login(data.token, data.rol)
 
-      // Redirigir directamente según el rol
-      if (data.rol === 'CLIENTE') navigate('/cliente/dashboard') // Redirigir a la ruta específica del dashboard de cliente
-      else if (data.rol === 'PELUQUERO') navigate('/peluquero/agenda') // Redirigir a la ruta específica de la agenda de peluquero
-      else if (data.rol === 'ADMIN') navigate('/admin/dashboard') // TODO: Asegúrate de tener una ruta y componente para el dashboard de admin
-      else setError('Rol desconocido')
+      // Verificar la estructura EXACTA de la respuesta del login
+      if (!data || typeof data !== 'object' || data.token === undefined || typeof data.token !== 'string') {
+        console.error('Estructura inesperada en la respuesta del login:', data)
+        setError('Error al procesar la respuesta del servidor.')
+        localStorage.removeItem('token') // Limpiar cualquier token inválido
+        setLoading(false)
+        return // Salir de la función si la respuesta no es válida
+      }
 
+      const tokenPlano = data.token
+
+      login({
+        token: String(tokenPlano),
+        rol: data.rol,
+        idUsuario: data.idUsuario,
+        email: data.email,
+        nombre: data.nombre,
+        peluqueria: data.peluqueria
+      })
+      
+      // Depuración: mostrar la estructura completa de data
+      console.log('Datos recibidos del login:', data)
+
+      // Extraer el rol desde el token JWT
+      const decoded = jwtDecode(tokenPlano)
+      const rol = (decoded.rol || 'UNKNOWN').toUpperCase().trim()
+
+      // Redirigir según el rol
+      if (rol === 'ADMIN') {
+        navigate('/admin/dashboard')
+      } else if (rol === 'CLIENTE') {
+        navigate('/cliente/dashboard')
+      } else if (rol === 'PELUQUERO') {
+        navigate('/peluquero/agenda')
+      } else {
+        console.error('Rol no reconocido en el token. Token decodificado:', decoded)
+        setError('Rol de usuario no válido o no especificado en el token')
+      }
     } catch (err) {
-      setError('Credenciales inválidas')
+      console.error('Error durante el login:', err)
+      setError(err.response?.data?.message || 'Error al iniciar sesión. Por favor, intente nuevamente.')
     } finally {
       setLoading(false)
     }
@@ -88,10 +121,19 @@ const LoginPage = () => {
         </Box>
 
         <Box className="login-register-link">
-          <Typography variant="body2" align="center">
+          <Typography variant="body2" align="center" className="login-register-link">
             ¿No tienes cuenta?{' '}
-            <span className="register-link" onClick={() => navigate('/registro')}>
+            <span className="register-link" onClick={() => navigate('/register')}>
               Regístrate
+            </span>
+          </Typography>
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            <span
+              className="register-link"
+              onClick={() => navigate('/forgot-password')}
+              style={{ cursor: 'pointer' }}
+            >
+              ¿Has olvidado tu contraseña?
             </span>
           </Typography>
         </Box>

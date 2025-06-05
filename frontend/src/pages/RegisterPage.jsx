@@ -91,7 +91,7 @@ const RegisterPage = () => {
         </Box>
 
         <Box className="register-link-back">
-          <Typography variant="body2" align="center">
+          <Typography variant="body2" align="center" className="register-link-back">
             ¿Ya tienes cuenta?{' '}
             <span className="register-link" onClick={() => navigate('/')}>
               Inicia sesión

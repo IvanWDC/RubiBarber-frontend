@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import '../styles/MapaPeluquerias.css';
 import '../styles/MisCitasCliente.css';
 import L from 'leaflet';
-import { LocationOn, Close, Star, Refresh } from '@mui/icons-material';
+import { LocationOn, Close, Star, Refresh, CommentOutlined } from '@mui/icons-material';
 import API from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -159,20 +159,46 @@ const MapaPeluquerias = () => {
                         <Typography variant="subtitle1" className="mapa-peluqueria-name">{p.nombre}</Typography>
                         <Typography variant="body2" color="text.secondary" className="mapa-peluqueria-address">{p.direccion}</Typography>
                         <Box className="mapa-peluqueria-details">
-                          <Typography variant="body2" color="text.secondary" className="mapa-peluqueria-distance">{p.distancia} km</Typography>
-                          <Typography variant="body2" color="text.secondary" className="mapa-peluqueria-rating"><Star className="mapa-star-icon" />{p.puntuacion} p</Typography>
+                          <Typography variant="body2" color="text.secondary" className="mapa-peluqueria-distance">
+                            {p.distancia !== null && p.distancia !== undefined ? 
+                              p.distancia < 1 ? 
+                                `${Math.round(p.distancia * 1000)} m` : 
+                                `${p.distancia.toFixed(1)} km`
+                              : 'N/A'
+                            }
+                          </Typography>
+                          <Box className="mapa-peluqueria-rating">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} sx={{ color: i < p.puntuacion ? '#ffb400' : '#e0e0e0', fontSize: '1rem' }} />
+                            ))}
+                            <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
+                              {p.puntuacion ? p.puntuacion.toFixed(1) : 'Sin rating'}
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
+                      <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
                       <Button
                         variant="contained"
                         color="primary"
                         size="small"
                         startIcon={<LocationOn />}
                         onClick={() => handleReservar(p)}
-                        sx={{ mt: 1, width: '100%' }}
+                          sx={{ width: 'calc(50% - 5px)' }}
                       >
                         Reservar
                       </Button>
+                        <Button
+                          variant="outlined"
+                          color="secondary"
+                          size="small"
+                          startIcon={<CommentOutlined />}
+                          onClick={() => navigate(`/cliente/comentarios/${p.id}`)}
+                          sx={{ width: 'calc(50% - 5px)' }}
+                        >
+                          Comentarios
+                        </Button>
+                      </Box>
                     </Box>
                   </motion.div>
                 ))
@@ -208,8 +234,20 @@ const MapaPeluquerias = () => {
                   icon={markerIcon}
                 >
                   <Popup>
-                    <Typography variant="subtitle1">{p.nombre}</Typography>
-                    <Typography variant="body2" color="text.secondary">{p.direccion}</Typography>
+                    <Box className="mapa-popup-content">
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#333' }}>{p.nombre}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{p.direccion}</Typography>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        startIcon={<LocationOn />}
+                        onClick={() => handleReservar(p)}
+                        sx={{ width: '100%' }}
+                      >
+                        Reservar
+                      </Button>
+                    </Box>
                   </Popup>
                 </Marker>
               ))}
@@ -219,7 +257,8 @@ const MapaPeluquerias = () => {
       </Box>
 
       <Box className="mapa-footer">
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        {/* Contenedor para el filtro de búsqueda (alineado con el sidebar) */}
+        <Box className="mapa-footer-search-area">
           <Typography variant="subtitle2" sx={{ color: 'white', marginBottom: '5px' }}>
             Buscar Peluquería:
           </Typography>
@@ -236,14 +275,20 @@ const MapaPeluquerias = () => {
             }}
           />
         </Box>
+
+        {/* Contenedor para el botón de actualizar ubicación (alineado con el mapa) */}
+        <Box className="mapa-footer-update-area">
         <Button
           variant="contained"
+            color="primary"
+            size="small"
           startIcon={<Refresh />}
           onClick={handleRefreshLocation}
-          className="mapa-refresh-button"
+            disabled={loading} // Deshabilitar durante la carga
         >
-          Actualizar Ubicación
+            ACTUALIZAR UBICACIÓN
         </Button>
+        </Box>
       </Box>
 
       <Snackbar

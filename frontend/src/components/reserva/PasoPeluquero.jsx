@@ -44,11 +44,16 @@ const PasoPeluquero = () => {
                 setLoading(true);
                 setError(null);
                 const data = await reservaService.getPeluquerosByPeluqueria(peluqueriaSeleccionada.id);
-                // Filtrar peluqueros que ofrecen el servicio seleccionado
-                const peluquerosFiltrados = servicioSeleccionado 
-                    ? data.filter(p => p.servicios.some(s => s.id === servicioSeleccionado.id))
-                    : data;
-                setPeluqueros(peluquerosFiltrados);
+                console.log('Peluqueros recibidos del backend (sin filtrar):', data); // Modificado para depurar
+
+                // Eliminar el filtro basado en servicio
+                // const peluquerosFiltrados = servicioSeleccionado 
+                //     ? data.filter(p => p.servicios.some(s => s.id === servicioSeleccionado.id))
+                //     : data;
+                
+                // Mostrar todos los peluqueros recibidos del backend (que ya vienen filtrados por activo: true desde el servicio)
+                setPeluqueros(data.filter(p => p.activo)); // Asegurarse de que solo se muestren los activos si el servicio no lo hace
+
             } catch (error) {
                 setError(error.message);
                 console.error('Error al cargar peluqueros:', error);
@@ -57,11 +62,12 @@ const PasoPeluquero = () => {
             }
         };
         cargarPeluqueros();
-    }, [peluqueriaSeleccionada, servicioSeleccionado]);
+    }, [peluqueriaSeleccionada]);
 
     const handleSeleccionPeluquero = (peluquero) => {
         setPeluqueroSeleccionado(peluquero);
-        setTimeout(siguientePaso, 500);
+        // Eliminar la llamada automática a siguientePaso
+        // setTimeout(siguientePaso, 500);
     };
 
     if (loading) {
@@ -133,7 +139,7 @@ const PasoPeluquero = () => {
                                                 sx={{ width: 64, height: 64 }}
                                             />
                                             <Box>
-                                                <Typography variant="h6">
+                                                <Typography variant="h6" sx={{ color: 'text.primary' }}>
                                                     {peluquero.nombre}
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -159,23 +165,6 @@ const PasoPeluquero = () => {
                                                 </Typography>
                                             </Box>
                                         )}
-
-                                        <Box sx={{ mt: 2 }}>
-                                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                                Servicios que ofrece:
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {peluquero.servicios.map(servicio => (
-                                                    <Chip
-                                                        key={servicio.id}
-                                                        label={servicio.nombre}
-                                                        size="small"
-                                                        color={servicio.id === servicioSeleccionado?.id ? "primary" : "default"}
-                                                        variant={servicio.id === servicioSeleccionado?.id ? "filled" : "outlined"}
-                                                    />
-                                                ))}
-                                            </Box>
-                                        </Box>
                                     </CardContent>
                                 </CardActionArea>
                             </Card>

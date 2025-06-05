@@ -126,6 +126,13 @@
     margin-bottom: 15px;
 }
 
+.admin-dashboard-chart-area h6,
+.admin-dashboard-table-area h6 {
+    color: #111;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 992px) {
     .admin-dashboard-container {

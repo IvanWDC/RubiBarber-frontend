@@ -115,126 +115,118 @@ const PasoConfirmacion = () => {
                 </Alert>
             )}
 
-            <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0, 0, 0, 0.12)' }}>
-                        <Typography variant="subtitle1" gutterBottom>
+            <Paper elevation={3} sx={{ p: 4 }}>
+                <Grid container spacing={4}>
+                    {/* Detalles de la Reserva */}
+                    <Grid item xs={12} md={12}>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'black' }}>
                             Detalles de la Reserva
                         </Typography>
                         <Divider sx={{ my: 2 }} />
                         
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            {/* Peluquería */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <StoreIcon sx={{ color: '#d72a3c' }} />
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Peluquería
+                                    <Typography variant="subtitle2" sx={{ color: 'black' }}>
+                                        Peluquería:
                                     </Typography>
-                                    <Typography variant="body1">
+                                    <Typography variant="body1" sx={{ color: 'black' }}>
                                         {peluqueriaSeleccionada?.nombre}
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{ color: 'black' }}>
                                         {peluqueriaSeleccionada?.direccion}
                                     </Typography>
                                 </Box>
                             </Box>
 
+                            {/* Servicio */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <SpaIcon sx={{ color: '#d72a3c' }} />
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Servicio
+                                    <Typography variant="subtitle2" sx={{ color: 'black' }}>
+                                        Servicio:
                                     </Typography>
-                                    <Typography variant="body1">
+                                    <Typography variant="body1" sx={{ color: 'black' }}>
                                         {servicioSeleccionado?.nombre}
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{ color: 'black' }}>
                                         Duración: {servicioSeleccionado?.duracion} minutos
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{ color: 'black' }}>
                                         Precio: {servicioSeleccionado?.precio}€
                                     </Typography>
                                 </Box>
                             </Box>
 
+                            {/* Peluquero */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <PersonIcon sx={{ color: '#d72a3c' }} />
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Peluquero
+                                    <Typography variant="subtitle2" sx={{ color: 'black' }}>
+                                        Peluquero:
                                     </Typography>
-                                    <Typography variant="body1">
+                                    <Typography variant="body1" sx={{ color: 'black' }}>
                                         {peluqueroSeleccionado?.nombre}
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{ color: 'black' }}>
                                         {peluqueroSeleccionado?.especialidad}
                                     </Typography>
                                 </Box>
                             </Box>
 
+                            {/* Fecha y Hora */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <AccessTimeIcon sx={{ color: '#d72a3c' }} />
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Fecha y Hora
+                                    <Typography variant="subtitle2" sx={{ color: 'black' }}>
+                                        Fecha y Hora:
                                     </Typography>
-                                    <Typography variant="body1">
+                                    <Typography variant="body1" sx={{ color: 'black' }}>
                                         {formatDateTime(fechaHoraSeleccionada)}
                                     </Typography>
                                 </Box>
                             </Box>
                         </Box>
-                    </Paper>
+                    </Grid>
                 </Grid>
+            </Paper>
 
-                <Grid item xs={12} md={4}>
-                    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0, 0, 0, 0.12)' }}>
-                        <Typography variant="subtitle1" gutterBottom>
-                            Resumen
-                        </Typography>
-                        <Divider sx={{ my: 2 }} />
-                        
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Servicio
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#d72a3c' }}>
-                                    {servicioSeleccionado?.precio}€
-                                </Typography>
-                            </Box>
-                            <Divider />
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="subtitle1">
-                                    Total
-                                </Typography>
-                                <Typography variant="subtitle1" color="primary">
-                                    {servicioSeleccionado?.precio}€
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        <Box sx={{ mt: 3 }}>
-                            <Button
-                                variant="contained"
-                                fullWidth
-                                size="large"
-                                onClick={handleConfirmarCita}
-                                disabled={loading}
-                                startIcon={<CheckCircleIcon />}
-                                sx={{
-                                    backgroundColor: '#d72a3c',
-                                    '&:hover': {
-                                        backgroundColor: '#c02534', // Un rojo un poco más oscuro para el hover
-                                    },
-                                }}
-                            >
-                                Confirmar Reserva
-                            </Button>
-                        </Box>
-                    </Paper>
-                </Grid>
-            </Grid>
+            {/* Botones de Navegación */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                <Button
+                    variant="outlined"
+                    onClick={() => {
+                        resetReserva();
+                        navigate('/cliente/mapa');
+                    }}
+                    sx={{
+                        color: '#d72a3c',
+                        borderColor: '#d72a3c',
+                        '&:hover': {
+                            borderColor: '#c02534',
+                            backgroundColor: 'rgba(215, 42, 60, 0.04)',
+                        },
+                    }}
+                >
+                    Cancelar
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={handleConfirmarCita}
+                    disabled={loading}
+                    startIcon={<CheckCircleIcon />}
+                    sx={{
+                        backgroundColor: '#d72a3c',
+                        '&:hover': {
+                            backgroundColor: '#c02534', // Un rojo un poco más oscuro para el hover
+                        },
+                    }}
+                >
+                    Confirmar Reserva
+                </Button>
+            </Box>
 
             <Dialog
                 open={showSuccessDialog}

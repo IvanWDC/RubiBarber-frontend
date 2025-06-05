@@ -34,8 +34,23 @@ const ReservaCita = () => {
         pasoAnterior, 
         siguientePaso,
         peluqueriaSeleccionada,
-        setPeluqueriaSeleccionada
+        setPeluqueriaSeleccionada,
+        peluqueroSeleccionado,
+        servicioSeleccionado,
+        resetReserva,
+        selectedDate,
+        fechaHoraSeleccionada
     } = useReserva();
+
+    console.log('ReservaCita State:', {
+        pasoActual,
+        selectedDate,
+        fechaHoraSeleccionada,
+        // Puedes añadir otras variables de estado si crees que son relevantes
+        // peluqueroSeleccionado,
+        // servicioSeleccionado,
+        // peluqueriaSeleccionada,
+    });
 
     const [loadingPeluqueria, setLoadingPeluqueria] = useState(true);
     const [errorPeluqueria, setErrorPeluqueria] = useState(null);
@@ -101,6 +116,14 @@ const ReservaCita = () => {
         }
     };
 
+    console.log('ReservaCita Render Check:', {
+        pasoActual: pasoActual,
+        fechaHoraSeleccionada: fechaHoraSeleccionada,
+        isDisabledButtonSiguiente: (pasoActual === 0 && (!peluqueriaSeleccionada || !servicioSeleccionado)) ||
+                                   (pasoActual === 1 && !peluqueroSeleccionado) ||
+                                   (pasoActual === 2 && !fechaHoraSeleccionada)
+    });
+
     return (
         <Box sx={{
             backgroundColor: '#f5f5f5', // Fondo gris claro
@@ -112,7 +135,7 @@ const ReservaCita = () => {
         }}>
             <Container maxWidth="lg">
                 <Paper sx={{ p: 3, mb: 3 }}>
-                    <Typography variant="h4" gutterBottom align="center">
+                    <Typography variant="h4" gutterBottom align="center" color="black">
                         Reserva tu Cita
                     </Typography>
                     
@@ -154,7 +177,10 @@ const ReservaCita = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
                             <Button
                                 variant="outlined"
-                                onClick={() => navigate('/cliente/mapa')}
+                                onClick={() => {
+                                    resetReserva();
+                                    navigate('/cliente/mapa');
+                                }}
                                 sx={{
                                     color: '#d72a3c',
                                     borderColor: '#d72a3c',
@@ -187,9 +213,10 @@ const ReservaCita = () => {
                                 <Button
                                     variant="contained"
                                     onClick={siguientePaso}
-                                    disabled={pasoActual === 0 && !peluqueriaSeleccionada ||
-                                        (pasoActual === 1 && !peluqueriaSeleccionada) ||
-                                        (pasoActual === 2 && !peluqueriaSeleccionada)
+                                    disabled={
+                                        (pasoActual === 0 && (!peluqueriaSeleccionada || !servicioSeleccionado)) ||
+                                        (pasoActual === 1 && !peluqueroSeleccionado) ||
+                                        (pasoActual === 2 && !fechaHoraSeleccionada)
                                     }
                                     sx={{
                                         backgroundColor: '#d72a3c',
@@ -198,7 +225,7 @@ const ReservaCita = () => {
                                         },
                                     }}
                                 >
-                                    {pasoActual === pasos.length - 2 ? 'Confirmar' : 'Siguiente'}
+                                    {'Siguiente'}
                                 </Button>
                             </Box>
                         </Box>

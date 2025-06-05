@@ -44,9 +44,9 @@
 .mapa-sidebar {
   width: 30%;
   overflow-y: auto;
-  background-color: white;
+  background-color: #f8f8f8; /* Fondo ligeramente gris para el sidebar */
   border-right: 1px solid #ddd;
-  /* padding: 16px; */ /* Moved padding to list items */
+  padding: 15px; /* Padding general para el sidebar */
 }
 
 .mapa-sidebar .MuiTypography-h5 {
@@ -110,20 +110,33 @@
 }
 
 .mapa-footer {
-  padding: 16px; /* Adjusted padding for consistency */
-  background-color: #333; /* Dark grey footer */
-  display: flex;
-  justify-content: space-around;
+  padding: 16px;
+  background-color: #333;
+  display: flex; /* Usar flexbox */
+  /* justify-content: space-around; Quitar justificación para que los hijos controlen el espacio */
   align-items: center;
-  gap: 16px; /* Added gap between flex items */
+  gap: 0; /* El espacio entre las dos áreas lo controlaremos con los anchos */
+}
+
+.mapa-footer-search-area {
+    width: 30%; /* Ancho igual al del sidebar */
+    padding-right: 10px; /* Espacio a la derecha antes del mapa */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Alinear contenido a la izquierda */
+}
+
+.mapa-footer-update-area {
+    width: 70%; /* Ancho igual al del mapa */
+    display: flex;
+    justify-content: center; /* Centrar el botón horizontalmente */
+    align-items: center;
 }
 
 .mapa-footer .MuiTextField-root {
-  width: 80%; /* Aumentar el ancho */
-  margin-right: 10px; /* Espacio entre el input y el botón */
-  background-color: white; /* White background for input */
-  border-radius: 4px; /* Rounded corners for input */
-  /* margin-left: 16px; */ /* Removed margin to the left */
+  width: 100%; /* El campo de texto ocupa todo el ancho de su contenedor (mapa-footer-search-area) */
+  background-color: white;
+  border-radius: 4px;
 }
 
 /* Added styles to fix TextField label alignment */
@@ -159,13 +172,24 @@
   background-color: #D32F2F; /* Darker red on hover */
 }
 
+/* Asegurar que el contenedor de búsqueda tenga un ancho definido */
+.mapa-footer > .MuiBox-root:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Mantener la alineación a la izquierda dentro de su Box */
+    /* Asegurar que este contenedor no ocupe todo el espacio horizontal */
+    /* flex-basis: auto; o width: auto; */
+}
+
 .mapa-sidebar-title {
-    margin-bottom: 20px; /* Espacio debajo del título */
-    font-size: 1.8em; /* Tamaño de fuente más grande */
+    padding-top: 30px; /* Más espacio superior */
+    margin-bottom: 25px; /* Más espacio debajo del título */
+    font-size: 2em; /* Título más grande */
+    font-weight: 700; /* Negrita más pronunciada */
     color: #333; /* Color de texto oscuro */
     text-align: center; /* Centrar el título */
-    padding-bottom: 10px;
-    border-bottom: 2px solid #C62828; /* Línea separadora */
+    padding-bottom: 15px; /* Más espacio debajo del texto del título */
+    border-bottom: 3px solid #C62828; /* Línea separadora roja más gruesa */
 }
 
 .mapa-loading-sidebar,
@@ -188,12 +212,13 @@
 .mapa-peluqueria-item {
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
+    border-left: 5px solid #C62828; /* Borde izquierdo de color */
     border-radius: 8px;
-    margin-bottom: 15px;
-    padding: 15px;
-    cursor: default; /* Cambiado de pointer a default ya que ahora solo la info es clickeable */
+    margin-bottom: 20px; /* Más espacio entre tarjetas */
+    padding: 20px; /* Más padding interno */
+    cursor: default;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
     display: flex;
     flex-direction: column;
 }
@@ -212,6 +237,7 @@
     text-transform: none;
     font-weight: 500;
     transition: all 0.3s ease;
+    margin-top: 15px; /* Más espacio encima del botón */
 }
 
 .mapa-peluqueria-item .MuiButton-root:hover {
@@ -226,26 +252,26 @@
 }
 
 .mapa-peluqueria-name {
-    font-size: 1.1em; /* Tamaño de fuente para el nombre */
+    font-size: 1.3em; /* Nombre más grande */
     font-weight: bold;
-    color: #333;
-    margin-bottom: 5px; /* Espacio debajo del nombre */
+    color: #C62828; /* Nombre en color rojo principal */
+    margin-bottom: 8px;
 }
 
 .mapa-peluqueria-address {
-    font-size: 0.9em; /* Tamaño de fuente para la dirección */
+    font-size: 1em; /* Tamaño de fuente para la dirección */
     color: #555;
-    margin-bottom: 10px; /* Espacio debajo de la dirección */
+    margin-bottom: 15px; /* Más espacio debajo de la dirección */
 }
 
 .mapa-peluqueria-details {
     display: flex;
-    justify-content: space-between; /* Distribuir espacio entre distancia y valoración */
+    justify-content: space-between;
     align-items: center;
-    font-size: 0.9em; /* Tamaño de fuente para detalles */
-    color: #555;
-    padding-top: 10px;
-    border-top: 1px solid #eee; /* Línea separadora */
+    font-size: 0.95em; /* Tamaño de fuente para detalles */
+    color: #666; /* Color ligeramente más claro para detalles */
+    padding-top: 12px; /* Más espacio superior */
+    border-top: 1px solid #eee;
 }
 
 .mapa-peluqueria-distance,
@@ -258,4 +284,113 @@
     color: #FFD700; /* Color dorado para estrellas */
     font-size: 1.1em;
     margin-right: 3px; /* Espacio entre estrella y número */
+}
+
+.leaflet-control-zoom-in::before,
+.leaflet-control-zoom-out::before {
+  content: '+ '; /* para zoom-in */
+  display: block;
+  text-align: center;
+  font-size: 18px;
+  color: #333;
+  line-height: 26px;
+  font-weight: bold;
+}
+
+.leaflet-control-zoom-out::before {
+  content: '- '; /* para zoom-out */
+}
+
+.leaflet-control-zoom a {
+  background-image: none !important;
+}
+
+.mapa-popup-content {
+    padding: 10px;
+    /* Añade más estilos aquí según sea necesario */
+    /* Por ejemplo: */
+    /* background-color: #fff; */
+    /* border-radius: 8px; */
+    /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); */
+}
+
+/* Puedes añadir estilos específicos para los elementos dentro del popup si es necesario */
+/*
+.mapa-popup-content .MuiTypography-subtitle1 {
+    margin-bottom: 5px;
+}
+.mapa-popup-content .MuiButton-root {
+    margin-top: 10px;
+}
+*/
+
+/* --- Estilos para las tarjetas de Servicio en el paso de Reserva --- */
+.reserva-servicio-card {
+    background-color: #ffffff; /* Fondo blanco */
+    border: 1px solid #e0e0e0;
+    border-left: 5px solid #d72a3c; /* Borde izquierdo rojo */
+    border-radius: 8px;
+    /* margin-bottom: 20px; */ /* No se necesita margin-bottom aquí por el Grid spacing */
+    padding: 15px; /* Padding interno */
+    cursor: pointer; /* Indica que es clickeable */
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    height: 100%; /* Asegurar que ocupan toda la altura en el Grid */
+    display: flex;
+    flex-direction: column;
+}
+
+.reserva-servicio-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada al pasar el ratón */
+    transform: translateY(-2px); /* Ligero levantamiento */
+}
+
+.reserva-servicio-card .MuiCardContent-root {
+    flex-grow: 1; /* Permite que el contenido ocupe el espacio disponible */
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important; /* Eliminar padding por defecto del CardContent si es necesario */
+}
+
+.reserva-servicio-card .MuiTypography-h6 {
+    font-weight: bold;
+    color: #333; /* Color oscuro para el nombre del servicio */
+    margin-bottom: 8px; /* Espacio debajo del nombre */
+}
+
+.reserva-servicio-card .MuiTypography-body2 {
+    color: #555; /* Color para la descripción */
+    margin-bottom: 15px; /* Espacio debajo de la descripción */
+    flex-grow: 1; /* Permite que la descripción ocupe espacio si es larga */
+}
+
+.reserva-servicio-card .MuiBox-root {
+    /* Contenedor para duración y precio */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reserva-servicio-card .MuiBox-root .MuiSvgIcon-root {
+    color: #555; /* Color para los iconos de tiempo y dinero */
+    font-size: 1rem; /* Tamaño de icono un poco más pequeño */
+}
+
+.reserva-servicio-card .MuiBox-root .MuiTypography-body2 {
+    color: #333; /* Color oscuro para el texto de duración */
+    margin-bottom: 0; /* Eliminar margin-bottom si la descripción ya lo tiene */
+    font-weight: normal; /* Asegurar que no esté en negrita si body2 lo tiene por defecto */
+}
+
+.reserva-servicio-card .MuiBox-root .MuiTypography-h6 {
+     /* Estilos específicos para el precio */
+     color: #d72a3c; /* Color rojo para el precio */
+     font-weight: bold; /* Asegurar negrita para el precio */
+     font-size: 1.1rem; /* Tamaño del precio un poco más grande */
+     margin-bottom: 0; /* Eliminar margin-bottom */
+}
+
+/* Estilo para el borde de selección */
+.reserva-servicio-card.MuiCard-root.MuiCard-outlined {
+    border: 2px solid #d72a3c; /* Borde rojo más grueso cuando está seleccionado */
 }
